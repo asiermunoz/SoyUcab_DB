@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registro como Persona | SoyUCAB</title>
+
+  <link rel="stylesheet" href="styleRP.css" />
+</head>
+
+<body>
+  <main class="wrap">
+    <section class="card" aria-label="Registro como Persona">
+
+      <div class="brand">
+        <img class="logo" src="../../../img/Logo Proyecto.png" alt="SoyUCAB - Red Social Institucional">
+      </div>
+
+      <h1>Registrarse como <span>PERSONA</span></h1>
+
+      <form id="formPersona" class="form" novalidate>
+        <!-- Fila: Nombre / Apellido -->
+        <div class="grid-2">
+          <div class="field">
+            <label for="nombre">Nombre</label>
+            <input id="nombre" name="nombre" type="text" required />
+          </div>
+
+          <div class="field">
+            <label for="apellido">Apellido</label>
+            <input id="apellido" name="apellido" type="text" required />
+          </div>
+        </div>
+
+        <!-- Cédula -->
+        <div class="field">
+          <label for="cedula">Cédula</label>
+          <input id="cedula" name="cedula" type="text" inputmode="numeric" placeholder="Ej: V-12345678" required />
+        </div>
+
+        <!-- Ciudad / País -->
+        <div class="grid-2">
+          <div class="field">
+            <label for="ciudad">Ciudad</label>
+            <input id="ciudad" name="ciudad" type="text" required />
+          </div>
+
+          <div class="field">
+            <label for="pais">País</label>
+            <input id="pais" name="pais" type="text" required />
+          </div>
+        </div>
+
+        <!-- Teléfono -->
+        <div class="field">
+          <label for="telefono">Teléfono</label>
+          <div class="phone">
+            <input id="telefono" name="telefono" type="tel" placeholder="Número de teléfono" required />
+          </div>
+        </div>
+
+        <!-- Fecha Nacimiento / Sexo -->
+        <div class="grid-2">
+          <div class="field">
+            <label for="fecha">Fecha de Nacimiento</label>
+            <input id="fecha" name="fecha" type="date" required />
+          </div>
+
+          <div class="field">
+            <label for="sexo">Sexo</label>
+            <select id="sexo" name="sexo" required>
+              <option value="" selected disabled>Selecciona</option>
+              <option value="f">Femenino</option>
+              <option value="m">Masculino</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Bibliografía -->
+        <div class="field">
+          <label for="bio">Bibliografía</label>
+          <textarea id="bio" name="bio" rows="4" placeholder="Cuéntanos un poco sobre ti..."></textarea>
+        </div>
+
+        <!-- Usuario -->
+        <div class="field">
+          <label for="usuario">Nombre de Usuario</label>
+          <input id="usuario" name="usuario" type="text" autocomplete="username" required />
+        </div>
+
+        <!-- Correo -->
+        <div class="field">
+          <label for="correo">Correo</label>
+          <input id="correo" name="correo" type="email" autocomplete="email" required />
+        </div>
+
+        <!-- Contraseña -->
+        <div class="field">
+          <label for="contrasena">Contraseña</label>
+          <input id="contrasena" name="contrasena" type="password" autocomplete="new-password" required />
+        </div>
+
+        <p id="msg" class="msg" aria-live="polite"></p>
+
+        <div class="actions">
+          <a class="back" href="../index.html">← Volver</a>
+          <button class="btn" href="../index.html" type="submit">Registrar</button>
+        </div>
+      </form>
+
+    </section>
+  </main>
+
+  <script src="appRP.js"></script>
+</body>
+</html>
