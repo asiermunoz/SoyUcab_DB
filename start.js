@@ -60,6 +60,126 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Helper function to get or insert lugar
+async function getOrInsertLugar(client, ciudad, pais) {
+  // Check if exists
+  const checkQuery = 'SELECT id_lugar FROM Lugar WHERE ciudad = $1 AND pais = $2';
+  const checkResult = await client.query(checkQuery, [ciudad, pais]);
+  if (checkResult.rows.length > 0) {
+    return checkResult.rows[0].id_lugar;
+  }
+  // Insert new
+  const insertQuery = 'INSERT INTO Lugar (ciudad, pais) VALUES ($1, $2) RETURNING id_lugar';
+  const insertResult = await client.query(insertQuery, [ciudad, pais]);
+  return insertResult.rows[0].id_lugar;
+}
+
+// Register Persona
+app.post('/api/register/persona', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { nombre, apellido, cedula, ciudad, pais, fecha, sexo, bio, usuario, correo, contrasena } = req.body;
+
+    // Check if username or email exists
+    const checkUser = await client.query('SELECT username FROM Usuario WHERE username = $1 OR email = $2', [usuario, correo]);
+    if (checkUser.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Usuario o correo ya existe' });
+    }
+
+    // Insert Usuario
+    await client.query('INSERT INTO Usuario (username, email, password) VALUES ($1, $2, $3)', [usuario, correo, contrasena]);
+
+    // Get or insert lugar
+    const id_lugar = await getOrInsertLugar(client, ciudad, pais);
+
+    // Insert Persona
+    await client.query('INSERT INTO Persona (cedula, nombre, apellido, fecha_nacimiento, sexo, biografia, username, id_lugar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', 
+      [parseInt(cedula), nombre, apellido, fecha, sexo, bio || null, usuario, id_lugar]);
+
+    await client.query('COMMIT');
+    res.json({ success: true, message: 'Registro de persona exitoso' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Register persona error:', err);
+    res.status(500).json({ error: 'Error interno' });
+  } finally {
+    client.release();
+  }
+});
+
+// Register Dependencia
+app.post('/api/register/dependencia', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { abreviatura, nombre, tipo, usuario, correo, contrasena } = req.body;
+
+    // Map tipo
+    const tipoMap = { academica: 'Facultad', administrativa: 'Direccion', servicios: 'Centro', otra: 'Escuela' };
+    const tipoDB = tipoMap[tipo] || 'Escuela';
+
+    // Check if username or email exists
+    const checkUser = await client.query('SELECT username FROM Usuario WHERE username = $1 OR email = $2', [usuario, correo]);
+    if (checkUser.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Usuario o correo ya existe' });
+    }
+
+    // Insert Usuario
+    await client.query('INSERT INTO Usuario (username, email, password) VALUES ($1, $2, $3)', [usuario, correo, contrasena]);
+
+    // Insert Dependencia
+    await client.query('INSERT INTO Dependencia_UCAB (abreviatura, nombre, tipo, username) VALUES ($1, $2, $3, $4)', 
+      [abreviatura, nombre, tipoDB, usuario]);
+
+    await client.query('COMMIT');
+    res.json({ success: true, message: 'Registro de dependencia exitoso' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Register dependencia error:', err);
+    res.status(500).json({ error: 'Error interno' });
+  } finally {
+    client.release();
+  }
+});
+
+// Register Organizacion
+app.post('/api/register/organizacion', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { nombre, rif, ciudad, pais, descripcion, sector, miembros, usuario, correo, contrasena } = req.body;
+
+    // Check if username or email exists
+    const checkUser = await client.query('SELECT username FROM Usuario WHERE username = $1 OR email = $2', [usuario, correo]);
+    if (checkUser.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Usuario o correo ya existe' });
+    }
+
+    // Insert Usuario
+    await client.query('INSERT INTO Usuario (username, email, password) VALUES ($1, $2, $3)', [usuario, correo, contrasena]);
+
+    // Get or insert lugar
+    const id_lugar = await getOrInsertLugar(client, ciudad, pais);
+
+    // Insert Organizacion
+    await client.query('INSERT INTO Organizacion_Asociada (RIF, nombre_organizacion, descripcion, sector, miembros, id_lugar, username) VALUES ($1, $2, $3, $4, $5, $6, $7)', 
+      [parseInt(rif), nombre, descripcion || null, sector, miembros, id_lugar, usuario]);
+
+    await client.query('COMMIT');
+    res.json({ success: true, message: 'Registro de organización exitoso' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Register organizacion error:', err);
+    res.status(500).json({ error: 'Error interno' });
+  } finally {
+    client.release();
+  }
+});
+
 // Serve static frontend from root directory
 app.use(express.static(path.join(__dirname)));
 
@@ -72,5 +192,6 @@ app.use(express.static(path.join(__dirname)));
     if (host === '::' || host === '0.0.0.0') host = 'localhost';
     const protocol = process.env.HTTPS === 'true' ? 'https' : 'http';
     console.log(`Server listening at ${protocol}://${host}:${addr.port}`);
+    console.log(`Server listening at ${protocol}://${host}:${addr.port}/login`);
   });
 })();

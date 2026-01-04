@@ -1,7 +1,7 @@
 const form = document.getElementById("formOrg");
 const msg = document.getElementById("msg");
 
-form.addEventListener("submit", (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const requiredIds = ["nombre","rif","ciudad","pais","sector","miembros","usuario","correo","contrasena"];
@@ -24,11 +24,42 @@ form.addEventListener("submit", (e) => {
     return;
   }
 
-  msg.textContent = "Registro de Organización enviado.";
-  msg.style.color = "#16a34a";
+  // Prepare data
+  const data = {
+    nombre: document.getElementById("nombre").value.trim(),
+    rif: document.getElementById("rif").value.trim(),
+    ciudad: document.getElementById("ciudad").value.trim(),
+    pais: document.getElementById("pais").value.trim(),
+    descripcion: document.getElementById("descripcion").value.trim(),
+    sector: document.getElementById("sector").value,
+    miembros: miembros,
+    usuario: document.getElementById("usuario").value.trim(),
+    correo: document.getElementById("correo").value.trim(),
+    contrasena: document.getElementById("contrasena").value
+  };
 
-  setTimeout(() => {
-    alert("Registro exitoso.");
-    window.location.href = "../index.html";
-  }, 500);
+  try {
+    const resp = await fetch('/api/register/organizacion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const result = await resp.json();
+
+    if (resp.ok && result.success) {
+      msg.textContent = "Registro exitoso.";
+      msg.style.color = "#16a34a";
+      setTimeout(() => {
+        window.location.href = "../index.html";
+      }, 1000);
+    } else {
+      msg.textContent = result.error || "Error en el registro.";
+      msg.style.color = "#dc2626";
+    }
+  } catch (err) {
+    console.error('Error:', err);
+    msg.textContent = "Error de conexión.";
+    msg.style.color = "#dc2626";
+  }
 });

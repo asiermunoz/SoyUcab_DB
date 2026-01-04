@@ -86,27 +86,6 @@ input:focus, select:focus, textarea:focus{
   gap: 14px;
 }
 
-.phone{
-  display:flex;
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  overflow:hidden;
-}
-.prefix{
-  background:#eef2f7;
-  padding: 10px 12px;
-  font-weight: 800;
-  color: var(--navy);
-  border-right: 2px solid var(--border);
-  display:flex;
-  align-items:center;
-}
-.phone input{
-  border:none;
-  border-radius:0;
-  flex:1;
-}
-
 .msg{
   min-height: 18px;
   margin: 2px 0 0;
