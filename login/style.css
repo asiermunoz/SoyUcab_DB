@@ -174,11 +174,10 @@ button:hover { background: #102e49; }
   line-height: 1.05;
 }
 
-.opcion:hover{ background: #102e49; }
-
-.opcion.activa{
-  border-color: #d4a21a;
-  box-shadow: 0 0 0 2px rgba(212,162,26,.25);
+.opcion:hover{ 
+  background: #102e49; 
+  border-color: #ffb300;
+  border-width: 2px;
 }
 
 .btn-principal{
