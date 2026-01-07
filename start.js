@@ -183,6 +183,11 @@ app.post('/api/register/organizacion', async (req, res) => {
 // Serve static frontend from root directory
 app.use(express.static(path.join(__dirname)));
 
+// Route for /login to serve src/login/index.html
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/login/index.html'));
+});
+
 // Start server after testing DB
 (async function start() {
   await testDb();
