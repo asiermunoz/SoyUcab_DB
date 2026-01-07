@@ -70,19 +70,20 @@ formulario.addEventListener("submit", async function (e) {
     const resp = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario: usuario.value.trim(), contrasena: contrasena.value })
+      body: JSON.stringify({ username: usuario.value.trim(), password: contrasena.value })
     });
 
     const data = await resp.json();
 
-    if (resp.ok && data.success) {
-      mensaje.textContent = 'Inicio de sesión exitoso.';
+    if (resp.ok) {
+      mensaje.textContent = data.message || 'Inicio de sesión exitoso.';
       mensaje.style.color = 'green';
-      // Guardar sesión
-      localStorage.setItem("soyucab_sesion", "true");
-      localStorage.setItem("soyucab_usuario", data.username);
-      // redirigir a la página principal del sistema
-      setTimeout(() => window.location.href = '/inicio', 400);
+      // Guardar token y sesión
+      localStorage.setItem("soyucab_token", data.token);
+      localStorage.setItem("soyucab_usuario", data.user.username);
+      localStorage.setItem("soyucab_role", data.user.role);
+      // Redirigir a la página principal
+      setTimeout(() => window.location.href = '../Inicio/inicio.html', 400);
     } else {
       mensaje.textContent = data.error || 'Usuario o contraseña incorrectos.';
       mensaje.style.color = 'red';

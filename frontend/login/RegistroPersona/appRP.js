@@ -31,6 +31,10 @@ form.addEventListener("submit", async (e) => {
     contrasena: document.getElementById("contrasena").value
   };
 
+  // Capitalizar ciudad y pais
+  data.ciudad = data.ciudad.charAt(0).toUpperCase() + data.ciudad.slice(1).toLowerCase();
+  data.pais = data.pais.charAt(0).toUpperCase() + data.pais.slice(1).toLowerCase();
+
   try {
     const resp = await fetch('/api/register/persona', {
       method: 'POST',
@@ -40,8 +44,8 @@ form.addEventListener("submit", async (e) => {
 
     const result = await resp.json();
 
-    if (resp.ok && result.success) {
-      msg.textContent = "Registro exitoso.";
+    if (resp.ok) {
+      msg.textContent = result.message || "Registro exitoso.";
       msg.style.color = "#16a34a";
       setTimeout(() => {
         window.location.href = "../index.html";

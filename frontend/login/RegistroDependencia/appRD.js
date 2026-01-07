@@ -34,8 +34,8 @@ form.addEventListener("submit", async (e) => {
 
     const result = await resp.json();
 
-    if (resp.ok && result.success) {
-      msg.textContent = "Registro exitoso.";
+    if (resp.ok) {
+      msg.textContent = result.message || "Registro exitoso.";
       msg.style.color = "#16a34a";
       setTimeout(() => {
         window.location.href = "../index.html";
