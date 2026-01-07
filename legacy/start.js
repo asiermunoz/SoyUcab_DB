@@ -180,12 +180,144 @@ app.post('/api/register/organizacion', async (req, res) => {
   }
 });
 
+// API endpoints for modules
+
+// Eventos
+app.get('/api/eventos', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM Evento ORDER BY fecha_evento DESC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching eventos:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+app.post('/api/eventos', async (req, res) => {
+  const { nombre, descripcion, fecha_evento, lugar, organizador } = req.body;
+  try {
+    const result = await pool.query('INSERT INTO Evento (nombre, descripcion, fecha_evento, lugar, organizador) VALUES ($1, $2, $3, $4, $5) RETURNING *', 
+      [nombre, descripcion, fecha_evento, lugar, organizador]);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating evento:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Grupos
+app.get('/api/grupos', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM Grupo');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching grupos:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+app.post('/api/grupos', async (req, res) => {
+  const { nombre, descripcion, creador } = req.body;
+  try {
+    const result = await pool.query('INSERT INTO Grupo (nombre, descripcion, creador, fecha_creacion) VALUES ($1, $2, $3, NOW()) RETURNING *', 
+      [nombre, descripcion, creador]);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating grupo:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Perfil
+app.get('/api/perfil/:username', async (req, res) => {
+  const { username } = req.params;
+  try {
+    const result = await pool.query('SELECT u.username, u.email, p.nombre, p.apellido, p.cedula, p.fecha_nacimiento, p.sexo, p.biografia FROM Usuario u LEFT JOIN Persona p ON u.username = p.username WHERE u.username = $1', [username]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error fetching perfil:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Busqueda
+app.get('/api/search', async (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.json([]);
+  try {
+    const result = await pool.query('SELECT username, email FROM Usuario WHERE username ILIKE $1 OR email ILIKE $1 LIMIT 10', [`%${q}%`]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error searching:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Lugares para MapaUcab
+app.get('/api/lugares', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM Lugar');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching lugares:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Posts for Inicio
+app.get('/api/posts', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT p.*, u.email FROM Publicacion p JOIN Usuario u ON p.username = u.username ORDER BY p.fecha DESC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching posts:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+app.post('/api/posts', async (req, res) => {
+  const { username, contenido } = req.body;
+  try {
+    const result = await pool.query('INSERT INTO Publicacion (username, contenido, fecha) VALUES ($1, $2, NOW()) RETURNING *', [username, contenido]);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating post:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
 // Serve static frontend from root directory
 app.use(express.static(path.join(__dirname)));
 
 // Route for /login to serve src/login/index.html
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'src/login/index.html'));
+});
+
+// Routes for other pages
+app.get('/inicio', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/Inicio/inicio.html'));
+});
+
+app.get('/perfil', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/Perfil/perfil.html'));
+});
+
+app.get('/busqueda', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/Busqueda/busqueda.html'));
+});
+
+app.get('/eventos', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/Eventos/evento.html'));
+});
+
+app.get('/grupos', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/Grupos/grupo.html'));
+});
+
+app.get('/mapa', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/MapaUcab/mapaUcab.html'));
 });
 
 // Start server after testing DB

@@ -78,8 +78,11 @@ formulario.addEventListener("submit", async function (e) {
     if (resp.ok && data.success) {
       mensaje.textContent = 'Inicio de sesión exitoso.';
       mensaje.style.color = 'green';
+      // Guardar sesión
+      localStorage.setItem("soyucab_sesion", "true");
+      localStorage.setItem("soyucab_usuario", data.username);
       // redirigir a la página principal del sistema
-      setTimeout(() => window.location.href = '/', 400);
+      setTimeout(() => window.location.href = '/inicio', 400);
     } else {
       mensaje.textContent = data.error || 'Usuario o contraseña incorrectos.';
       mensaje.style.color = 'red';
