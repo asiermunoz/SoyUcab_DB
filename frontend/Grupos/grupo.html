@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grupos</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="/frontend/img/mini_logo.png">
+</head>
+<body>
+
+  <main class="wrap">
+
+    <header class="top">
+      <button class="back" id="btnBack" type="button">←Volver</button>
+
+      <div class="searchBox">
+        <input id="searchInput" type="text" placeholder="Busca" aria-label="Buscar grupos">
+        <button class="filterBtn" id="btnFilter" type="button" aria-label="Filtros">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 6h16M7 12h10M10 18h4" stroke="#0b2236" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <button class="createBtn" id="btnCreateGroup" type="button">Crear grupo</button>
+    </header>
+
+    <!-- panel de filtros -->
+    <section class="filters hidden" id="filtersPanel">
+      <div class="filtersGrid">
+        <label class="chip">
+          <input type="checkbox" id="onlyJoined">
+          <span>Solo unidos</span>
+        </label>
+
+        <label class="chip">
+          <input type="checkbox" id="onlyAdmin">
+          <span>Solo donde soy admin</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="list" id="groupsList"></section>
+    <p class="empty hidden" id="emptyState">No hay grupos con ese filtro.</p>
+
+  </main>
+
+  <!-- =======================
+       MODAL: Crear Grupo
+       ======================= -->
+  <div class="modalOverlay hidden" id="modalOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modalHeader">
+        <h2 class="modalTitle" id="modalTitle">Crear grupo</h2>
+        <button class="modalClose" id="btnCloseModal" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="createGroupForm" class="modalBody">
+
+        <div class="field">
+          <label for="cg_cover">Portada del grupo (imagen)</label>
+          <input id="cg_cover" type="file" accept="image/*" />
+          <div class="coverPreview" id="coverPreview">
+            <span id="coverPlaceholder">Vista previa de portada</span>
+            <img id="coverImg" alt="Portada del grupo" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="cg_name">Nombre del grupo</label>
+          <input id="cg_name" type="text" placeholder="Ej: Voluntariado UCAB" required />
+        </div>
+
+        <div class="field">
+          <label for="cg_desc">Descripción</label>
+          <textarea id="cg_desc" rows="4" placeholder="Describe el grupo..." required></textarea>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="cg_type">Tipo de grupo</label>
+            <select id="cg_type" required>
+              <option value="" selected disabled>Selecciona</option>
+              <option value="publico">Público</option>
+              <option value="privado">Privado</option>
+              <option value="secreto">Secreto</option>
+            </select>
+            <small class="hint">
+              Los grupos <strong>secretos</strong> no aparecerán en la búsqueda.
+            </small>
+          </div>
+
+          <div class="field">
+            <label for="cg_date">Fecha de creación</label>
+            <input id="cg_date" type="text" readonly />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="cg_creator">Creador</label>
+            <input id="cg_creator" type="text" readonly />
+          </div>
+
+          <div class="field">
+            <label for="cg_role">Rol</label>
+            <input id="cg_role" type="text" readonly />
+          </div>
+        </div>
+
+        <p class="formError hidden" id="formError"></p>
+
+        <div class="modalFooter">
+          <button type="button" class="btnGhost" id="btnCancelModal">Cancelar</button>
+          <button type="submit" class="btnPrimary">Crear</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =======================
+       MODAL: Chat del Grupo
+       ======================= -->
+  <div class="modalOverlay hidden" id="chatOverlay" aria-hidden="true">
+    <div class="modal chatModal" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
+      <div class="modalHeader">
+        <div class="chatHeaderLeft">
+          <div class="chatCover" id="chatCover"></div>
+          <div>
+            <h2 class="modalTitle" id="chatTitle">Chat</h2>
+            <div class="chatSubtitle" id="chatSubtitle"></div>
+          </div>
+        </div>
+        <button class="modalClose" id="btnCloseChat" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="chatBody">
+        <div class="chatMessages" id="chatMessages"></div>
+
+        <!-- ✅ UN SOLO FORM (con adjuntos) -->
+        <form id="chatForm">
+          <div class="chatInputRow">
+            <input id="chatInput" type="text" placeholder="Escribe un mensaje..." autocomplete="off" />
+
+            <input id="chatFile" type="file" accept="image/*,video/*,application/pdf" hidden />
+
+            <button id="btnAttach" type="button" class="iconBtn" title="Adjuntar archivo">📎</button>
+            <button id="btnClearAttach" type="button" class="iconBtn" title="Quitar adjunto" disabled>✕</button>
+
+            <button type="submit" class="btnPrimary">Enviar</button>
+          </div>
+
+          <div id="chatAttachPreview" class="attachPreview hidden"></div>
+        </form>
+
+        <p class="formError hidden" id="chatError"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================
+     MODAL: Solicitudes (Admin)
+     ======================= -->
+  <div class="modalOverlay hidden" id="requestsOverlay" aria-hidden="true">
+    <div class="modal requestsModal" role="dialog" aria-modal="true" aria-labelledby="requestsTitle">
+      <div class="modalHeader">
+        <h2 class="modalTitle" id="requestsTitle">Solicitudes de unión</h2>
+        <button class="modalClose" id="btnCloseRequests" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modalBody" id="requestsBody">
+        <p class="empty" id="requestsEmpty">No hay solicitudes por ahora.</p>
+        <div class="requestsList" id="requestsList"></div>
+      </div>
+
+      <div class="modalFooter">
+        <button type="button" class="btnGhost" id="btnCloseRequests2">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

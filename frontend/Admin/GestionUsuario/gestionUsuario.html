@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin | Usuarios</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="/frontend/img/mini_logo.png">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <a class="logo" href="../admin.html" title="Volver al panel">
+      <img src="/frontend/img/logo.png" alt="Logo del sistema">
+    </a>
+    <div>
+      <h1>Administración de Usuarios</h1>
+      <p>Crear, editar y eliminar usuarios del sistema</p>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="btnBackAdmin" class="btn ghost" type="button">← Panel</button>
+    <button id="btnLogout" class="btn danger" type="button">Cerrar sesión</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="toolbar">
+    <div class="search">
+      <input id="q" type="text" placeholder="Buscar por @usuario, correo, rol..." autocomplete="off">
+    </div>
+
+    <div class="filters">
+      <select id="roleFilter">
+        <option value="all">Todos</option>
+        <option value="persona">Personas</option>
+        <option value="dependencia">Dependencias</option>
+        <option value="organizacion">Organizaciones</option>
+      </select>
+
+      <button id="btnNewUser" class="btn primary" type="button">+ Registrar usuario</button>
+    </div>
+  </section>
+
+  <section class="tableWrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th class="thActions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyUsers"></tbody>
+    </table>
+
+    <p id="empty" class="empty hidden">No hay usuarios para mostrar.</p>
+  </section>
+</main>
+
+<!-- Modal Crear/Editar -->
+<div class="overlay hidden" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modalHead">
+      <h2 id="modalTitle">Registrar usuario</h2>
+      <button class="x" id="btnCloseModal" type="button">✕</button>
+    </div>
+
+    <form id="formUser" class="modalBody">
+      <input type="hidden" id="editIndex" value="">
+
+      <div class="field">
+        <label for="usuario">Usuario</label>
+        <input id="usuario" required placeholder="@usuario">
+        <small class="help">Se guardará con @ automáticamente si no lo colocas.</small>
+      </div>
+
+      <div class="field">
+        <label for="correo">Correo</label>
+        <input id="correo" type="email" required placeholder="correo@ucab.edu.ve">
+      </div>
+
+      <div class="field">
+        <label for="contrasena">Contraseña</label>
+        <div class="passRow">
+          <input id="contrasena" type="password" required placeholder="******">
+          <button id="btnTogglePass" class="btn ghost" type="button">Ver</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="role">Rol</label>
+        <select id="role" required>
+          <option value="" disabled selected>Selecciona</option>
+          <option value="persona">Persona</option>
+          <option value="dependencia">Dependencia UCAB</option>
+          <option value="organizacion">Organización</option>
+        </select>
+        <small class="help">El rol admin se maneja aparte y no se crea aquí.</small>
+      </div>
+
+      <p class="msg hidden" id="msg"></p>
+
+      <div class="modalFoot">
+        <button class="btn ghost" id="btnCancel" type="button">Cancelar</button>
+        <button class="btn primary" id="btnSave" type="submit">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

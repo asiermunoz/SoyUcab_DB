@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SoyUCAB | Administrador</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="/frontend/img/mini_logo.png">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">
+        <img src="/frontend/img/logo.png" alt="Logo del sistema">
+      </div>  
+
+      <div>
+        <h1>Panel del Administrador</h1>
+        <p>Vista general del sistema</p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="btnGoInicio" class="btn ghost" type="button">Red Social</button>
+      <button id="btnLogout" class="btn danger" type="button">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="cards">
+      <div class="card clickable" id="goUsuarios">
+        <h2>Usuarios</h2>
+        <p>Personas, dependencias y organizaciones registradas.</p>
+        <div class="metric" id="mUsers">—</div>
+        <span class="link">Gestionar usuarios →</span>
+      </div>
+
+      <div class="card clickable" id="goGrupos">
+        <h2>Grupos</h2>
+        <p>Total de grupos creados en la plataforma.</p>
+        <div class="metric" id="mGroups">—</div>
+        <span class="link">Gestionar grupos →</span>
+      </div>
+
+      <div class="card clickable" id="goEventos">
+        <h2>Eventos</h2>
+        <p>Total de eventos registrados (borrador/publicado/etc.).</p>
+        <div class="metric" id="mEvents">—</div>
+        <span class="link">Gestionar eventos →</span>
+      </div>
+
+      <div class="card clickable" id="goPosts">
+        <h2>Publicaciones</h2>
+        <p>Total de publicaciones en el inicio.</p>
+        <div class="metric" id="mPosts">—</div>
+        <span class="link">Gestionar publicaciones →</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panelHead">
+        <h2>Vista general</h2>
+
+        <div class="reportsSection">
+          <div class="reportsHeader">
+            <div>
+              <h3>Reportes del sistema</h3>
+              <p class="muted">Descarga reportes en PDF.</p>
+            </div>
+          </div>
+
+          <div class="reportsGrid" id="reportsGrid"></div>
+        </div>
+
+      </div>
+
+      <div class="grid2">
+        <div class="box">
+          <h3>Últimos usuarios</h3>
+          <div id="lastUsers" class="list"></div>
+          <p class="empty hidden" id="lastUsersEmpty">No hay usuarios para mostrar.</p>
+        </div>
+
+        <div class="box">
+          <h3>Últimos grupos</h3>
+          <div id="lastGroups" class="list"></div>
+          <p class="empty hidden" id="lastGroupsEmpty">No hay grupos para mostrar.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

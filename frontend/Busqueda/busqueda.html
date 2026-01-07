@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Búsqueda | SoyUCAB</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="/frontend/img/mini_logo.png">
+</head>
+<body>
+
+  <main class="wrap">
+    <header class="top">
+      <button class="back" id="btnBack" type="button">← Volver</button>
+
+      <div class="titleBox">
+        <h1 class="title">Búsqueda</h1>
+        <p class="subtitle">Busca usuarios (persona, dependencia u organización).</p>
+      </div>
+    </header>
+
+    <!-- Solicitudes de amistad -->
+    <section class="requests">
+      <h2 class="sectionTitle">Solicitudes de amistad</h2>
+      <div class="reqList" id="reqList"></div>
+      <p class="empty hidden" id="reqEmpty">No tienes solicitudes pendientes.</p>
+    </section>
+
+    <!-- Mis amigos -->
+    <section class="friends">
+      <h2 class="sectionTitle">Mis amigos</h2>
+      <div class="friendsGrid" id="friendsGrid"></div>
+      <p class="empty hidden" id="friendsEmpty">Aún no tienes amigos.</p>
+    </section>
+
+    <!-- Buscador -->
+    <section class="searchBox">
+      <input id="q" type="text" placeholder="Busca por usuario (@), nombre, abreviatura..." autocomplete="off" />
+
+      <div class="chips" id="chips">
+        <button class="chip active" data-role="all" type="button">Todos</button>
+        <button class="chip" data-role="persona" type="button">Personas</button>
+        <button class="chip" data-role="dependencia" type="button">Dependencias</button>
+        <button class="chip" data-role="organizacion" type="button">Organizaciones</button>
+      </div>
+    </section>
+
+    <section class="results">
+      <div class="grid" id="grid"></div>
+      <p class="empty hidden" id="emptyState">No hay resultados con ese filtro.</p>
+    </section>
+  </main>
+
+  <!-- MODAL: Perfil rápido -->
+  <div class="overlay hidden" id="profileOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="profileName">
+      <div class="modalHead">
+        <h2 class="modalTitle">Perfil</h2>
+        <button class="x" id="btnCloseProfile" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modalBody center">
+        <div class="bigAvatar" id="profileAvatar"></div>
+        <h3 class="profileName" id="profileName"></h3>
+        <p class="profileUser" id="profileUser"></p>
+
+        <button class="primary" id="btnAddFriend" type="button">➕ Añadir amigo</button>
+        <p class="hint hidden" id="friendState"></p>
+      </div>
+
+      <div class="modalFoot">
+        <button class="ghost" id="btnCloseProfile2" type="button">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

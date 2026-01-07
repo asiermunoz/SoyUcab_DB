@@ -1,7 +1,7 @@
 // ✅ Proteger: si NO hay sesión, volver al login
-if (!localStorage.getItem("soyucab_sesion")) {
-  window.location.href = "/login";
-}
+/* if (!localStorage.getItem("soyucab_sesion")) {
+  window.location.href = "../login/index.html";
+} */
 
 // Logout
 const btnLogout = document.getElementById("btnLogout");
@@ -10,7 +10,7 @@ btnLogout.addEventListener("click", () => {
   localStorage.removeItem("soyucab_usuario");
   localStorage.removeItem("soyucab_role");
   localStorage.removeItem("soyucab_profile"); // para que no se mezclen perfiles
-  window.location.href = "/login";
+  window.location.href = "../login/index.html";
 });
 
 // Helpers
@@ -49,30 +49,20 @@ const comments = loadJSON("soyucab_comments", {}); // { postId: [{user,text,ts,a
 // ===============================
 // ✅ PUBLICACIONES (CRUD)
 // ===============================
-let posts = [];
+const POSTS_KEY = "soyucab_posts";
+let posts = loadJSON(POSTS_KEY, null);
+
+// Si no existen posts aún, crea 3 por defecto (los que tenías hardcodeados)
+if (!Array.isArray(posts)) {
+  posts = [
+    { id: "post_edcarmona", user: "@edcarmona", text: "Descripción de publicación..", ts: Date.now() - 600000, attachment: null },
+    { id: "post_gjgarcia", user: "@gjgarcia", text: "Descripción de publicación..", ts: Date.now() - 400000, attachment: null },
+    { id: "post_aamunoz", user: "@aamuñoz", text: "Descripción de publicación..", ts: Date.now() - 200000, attachment: null },
+  ];
+  saveJSON(POSTS_KEY, posts);
+}
 
 const postsMount = document.getElementById("postsMount");
-
-// Load posts from API
-async function loadPosts() {
-  try {
-    const resp = await fetch('/api/posts');
-    if (!resp.ok) throw new Error('Error loading posts');
-    const data = await resp.json();
-    posts = data.map(p => ({
-      id: p.id_publicacion,
-      user: p.username,
-      text: p.contenido,
-      ts: new Date(p.fecha).getTime(),
-      attachment: null // TODO: handle attachments
-    }));
-    renderPosts();
-  } catch (err) {
-    console.error('Error loading posts:', err);
-    posts = [];
-    renderPosts();
-  }
-}
 
 // Crear publicación UI
 const postForm = document.getElementById("postForm");
@@ -535,25 +525,36 @@ if (postForm) {
     const text = (postInput?.value || "").trim();
     if (!text && !selectedPostFile) return;
 
-    try {
-      const resp = await fetch('/api/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: currentUser, contenido: text })
-      });
-      if (!resp.ok) throw new Error('Error creating post');
-      await loadPosts(); // reload posts
-    } catch (err) {
-      setPostError("Error al publicar. Intenta de nuevo.");
-      console.error(err);
-      return;
+    let attachment = null;
+    if (selectedPostFile) {
+      try {
+        const dataUrl = await fileToDataURL(selectedPostFile);
+        attachment = { name: selectedPostFile.name, type: selectedPostFile.type, dataUrl };
+      } catch {
+        setPostError("No se pudo leer el archivo adjunto.");
+        return;
+      }
     }
+
+    const postId = "post_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+
+    posts.unshift({
+      id: postId,
+      user: currentUser,
+      text,
+      ts: Date.now(),
+      attachment
+    });
+
+    saveJSON(POSTS_KEY, posts);
 
     // limpiar UI
     postInput.value = "";
     if (postFile) postFile.value = "";
     selectedPostFile = null;
     if (postFileName) postFileName.textContent = "Sin archivo";
+
+    renderPosts();
   });
 }
 
@@ -649,5 +650,5 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ✅ Load posts from DB
-loadPosts();
+// ✅ Render inicial de posts
+renderPosts();
