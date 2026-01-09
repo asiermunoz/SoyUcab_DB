@@ -208,6 +208,29 @@ app.post('/api/register/organizacion', async (req, res) => {
     }
 });
 
+// API PARA OBTENER PERSONAS CON UBICACIONES
+app.get('/api/personas', async (req, res) => {
+  try {
+    const { q } = req.query;
+    let query = `
+      SELECT p.nombre, p.apellido, u.username, l.ciudad, l.pais
+      FROM Persona p
+      JOIN Usuario u ON p.username = u.username
+      JOIN Lugar l ON p.id_lugar = l.id_lugar
+      WHERE u.activo = true
+    `;
+    const params = [];
+    if (q) {
+      query += ` AND (u.username ILIKE $1 OR l.ciudad ILIKE $1 OR l.pais ILIKE $1)`;
+      params.push(`%${q}%`);
+    }
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener personas' });
+  }
+});
 
 // Iniciar el servidor
 app.listen(port, () => {
