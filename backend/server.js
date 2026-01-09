@@ -208,7 +208,7 @@ app.post('/api/register/organizacion', async (req, res) => {
     }
 });
 
-// API PARA OBTENER PERSONAS CON UBICACIONES
+// MapaUCAB
 app.get('/api/personas', async (req, res) => {
   try {
     const { q } = req.query;
@@ -229,6 +229,41 @@ app.get('/api/personas', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al obtener personas' });
+  }
+});
+
+// Buscador de Usuarios
+app.get('/api/usuarios', async (req, res) => {
+  try {
+    const { q } = req.query;
+    let query = `
+      SELECT 'persona' as "tipo", u.username, CONCAT(p.nombre, ' ', p.apellido) as "displayName", l.ciudad, l.pais, NULL as "abreviatura", NULL as "sector"
+      FROM Persona p
+      JOIN Usuario u ON p.username = u.username
+      LEFT JOIN Lugar l ON p.id_lugar = l.id_lugar
+      WHERE u.activo = true
+      UNION ALL
+      SELECT 'dependencia' as "tipo", u.username, d.nombre as "displayName", NULL as ciudad, NULL as pais, d.abreviatura, d.tipo as "sector"
+      FROM Dependencia_UCAB d
+      JOIN Usuario u ON d.username = u.username
+      WHERE u.activo = true
+      UNION ALL
+      SELECT 'organizacion' as "tipo", u.username, o.nombre_organizacion as "displayName", l.ciudad, l.pais, NULL as "abreviatura", o.sector
+      FROM Organizacion_Asociada o
+      JOIN Usuario u ON o.username = u.username
+      LEFT JOIN Lugar l ON o.id_lugar = l.id_lugar
+      WHERE u.activo = true
+    `;
+    const params = [];
+    if (q) {
+      query = `SELECT * FROM (${query}) AS usuarios WHERE username ILIKE $1 OR "displayName" ILIKE $1 OR ciudad ILIKE $1 OR pais ILIKE $1 OR "abreviatura" ILIKE $1 OR "sector" ILIKE $1`;
+      params.push(`%${q}%`);
+    }
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener usuarios' });
   }
 });
 

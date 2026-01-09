@@ -53,97 +53,31 @@ function incomingExists(from, to){
 }
 
 /* =========================
-   LECTURA DE USUARIOS (robusta)
+   LECTURA DE USUARIOS (desde API)
    ========================= */
-const candidates = [
-  "soyucab_users",
-  "soyucab_usuarios",
-  "usuarios",
-  "users",
-  "app_users"
-];
-
-const profileCandidates = [
-  "soyucab_profiles",
-  "profiles",
-  "perfil_data"
-];
-
 const demoFallback = [
-  { username:"@persona_demo", role:"persona", displayName:"Persona Demo", avatarDataUrl:"" },
-  { username:"@dependencia_ucab", role:"dependencia", displayName:"Dependencia UCAB", avatarDataUrl:"" },
-  { username:"@org_demo", role:"organizacion", displayName:"Organización Demo", avatarDataUrl:"" }
+  { username:"@persona_demo", role:"persona", displayName:"Persona Demo", avatarDataUrl:"", abbrev:"", extra:"" },
+  { username:"@dependencia_ucab", role:"dependencia", displayName:"Dependencia UCAB", avatarDataUrl:"", abbrev:"", extra:"" },
+  { username:"@org_demo", role:"organizacion", displayName:"Organización Demo", avatarDataUrl:"", abbrev:"", extra:"" }
 ];
 
-function uniqByUsername(list){
-  const map = new Map();
-  list.forEach(u => {
-    const key = normalize(u.username || u.user || u.handle || u.email);
-    if (!key) return;
-    if (!map.has(key)) map.set(key, u);
-  });
-  return Array.from(map.values());
-}
-
-function coerceUser(raw){
-  const username = raw.username || raw.user || raw.handle || raw.usuario || raw.email || "";
-  const role = raw.role || raw.tipo || raw.userType || raw.rol || "persona";
-
-  const displayName =
-    raw.displayName ||
-    raw.name ||
-    raw.nombre ||
-    raw.fullName ||
-    raw.abreviatura ||
-    username;
-
-  const avatarDataUrl =
-    raw.avatarDataUrl ||
-    raw.avatar ||
-    (raw.profile && raw.profile.general && raw.profile.general.avatarDataUrl) ||
-    (raw.general && raw.general.avatarDataUrl) ||
-    "";
-
-  const abbrev = raw.abreviatura || raw.abbrev || "";
-  const extra = raw.tipoDependencia || raw.tipo || raw.sector || "";
-
-  return { username, role, displayName, avatarDataUrl, abbrev, extra };
-}
-
-function readUsersFromStorage(){
-  let out = [];
-
-  // A) listas
-  for (const key of candidates){
-    const data = loadJSON(key, null);
-    if (Array.isArray(data)) out = out.concat(data.map(coerceUser));
+async function fetchUsers(query = '') {
+  try {
+    const response = await fetch(`/api/usuarios?q=${encodeURIComponent(query)}`);
+    if (!response.ok) throw new Error('Error en la búsqueda');
+    const data = await response.json();
+    return data.map(u => ({
+      username: u.username,
+      role: u.tipo,
+      displayName: u.displayName || u.username,
+      avatarDataUrl: '', // No hay avatar en DB por ahora
+      abbrev: u.abreviatura || '',
+      extra: u.sector || ''
+    }));
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    return demoFallback;
   }
-
-  // B) perfiles (array o diccionario)
-  for (const key of profileCandidates){
-    const data = loadJSON(key, null);
-    if (!data) continue;
-
-    if (Array.isArray(data)) out = out.concat(data.map(coerceUser));
-    else if (typeof data === "object"){
-      Object.keys(data).forEach(k => out.push(coerceUser({ username: k, ...(data[k] || {}) })));
-    }
-  }
-
-  // C) usuario actual
-  const currentUser = localStorage.getItem("soyucab_usuario");
-  const currentRole = localStorage.getItem("soyucab_role");
-  if (currentUser){
-    out.push(coerceUser({ username: currentUser, role: currentRole || "persona", displayName: currentUser }));
-  }
-
-  out = out.filter(u => u.username);
-  // 🔒 OCULTAR ADMIN DEL SISTEMA
-  out = out.filter(u => normalize(u.role) !== "admin");
-  out = uniqByUsername(out);
-
-  if (out.length === 0) out = demoFallback.map(coerceUser);
-  return out;
 }
 
 /* =========================
@@ -170,7 +104,7 @@ const profileUser = $("profileUser");
 const btnAddFriend = $("btnAddFriend");
 const friendState = $("friendState");
 
-let USERS = readUsersFromStorage();
+let USERS = [];
 let roleFilter = "all";
 let selectedUser = null;
 
@@ -265,22 +199,20 @@ function closeQuickProfile(){
   document.body.style.overflow = "";
 }
 
-/* ===== Render resultados ===== */
-function render(){
+
+async function render(){
   if (!grid || !empty) return;
 
-  USERS = readUsersFromStorage();
-
   const query = normalize(q?.value || "");
+  USERS = await fetchUsers(query);
+
   let list = USERS.slice();
 
   if (roleFilter !== "all"){
     list = list.filter(u => normalize(u.role) === roleFilter);
   }
 
-  if (query){
-    list = list.filter(u => matches(u, query));
-  }
+  // Ya filtrado por query en fetch
 
   grid.innerHTML = "";
 
@@ -298,7 +230,7 @@ function render(){
       ? `<div class="avatar"><img src="${u.avatarDataUrl}" alt="Avatar"></div>`
       : `<div class="avatar">${initials(u)}</div>`;
 
-    const extraBadge = u.abbrev ? `<span class="badge">Abrev: ${u.abbrev}</span>` : "";
+    const extraBadge = u.abbrev ? `<span class="badge">Abrev: ${u.abbrev}</span>` : (u.extra ? `<span class="badge">${u.extra}</span>` : "");
 
     card.innerHTML = `
       ${avatarHTML}
@@ -365,7 +297,7 @@ function renderRequests(){
       </div>
     `;
 
-    div.querySelector("[data-ok]")?.addEventListener("click", () => {
+    div.querySelector("[data-ok]")?.addEventListener("click", async () => {
       const all = loadRequests();
       const idx = all.findIndex(x => x.id === r.id);
       if (idx !== -1) all[idx].status = "aceptada";
@@ -378,23 +310,23 @@ function renderRequests(){
       }
 
       renderRequests();
-      renderFriends();
-      render();
+      await renderFriends();
+      await render();
 
       if (selectedUser && normalize(selectedUser.username) === normalize(r.from) && !profileOverlay.classList.contains("hidden")){
         openQuickProfile(selectedUser);
       }
     });
 
-    div.querySelector("[data-no]")?.addEventListener("click", () => {
+    div.querySelector("[data-no]")?.addEventListener("click", async () => {
       const all = loadRequests();
       const idx = all.findIndex(x => x.id === r.id);
       if (idx !== -1) all[idx].status = "rechazada";
       saveRequests(all);
 
       renderRequests();
-      renderFriends();
-      render();
+      await renderFriends();
+      await render();
 
       if (selectedUser && normalize(selectedUser.username) === normalize(r.from) && !profileOverlay.classList.contains("hidden")){
         openQuickProfile(selectedUser);
@@ -406,7 +338,7 @@ function renderRequests(){
 }
 
 /* ===== Render amigos ===== */
-function renderFriends(){
+async function renderFriends(){
   if (!friendsGrid || !friendsEmpty) return;
 
   const me = localStorage.getItem("soyucab_usuario") || "@usuario";
@@ -416,10 +348,10 @@ function renderFriends(){
     .map(f => friendOther(me, f))
     .filter(Boolean);
 
-  USERS = readUsersFromStorage();
+  const allUsers = await fetchUsers(); // Obtener todos los usuarios
 
   const list = usernames
-    .map(uName => USERS.find(u => normalize(u.username) === normalize(uName)) || { username: uName, displayName: uName, role:"persona", avatarDataUrl:"" })
+    .map(uName => allUsers.find(u => normalize(u.username) === normalize(uName)) || { username: uName, displayName: uName, role:"persona", avatarDataUrl:"", abbrev:"", extra:"" })
     .sort((a,b) => normalize(a.displayName).localeCompare(normalize(b.displayName)));
 
   friendsGrid.innerHTML = "";
@@ -458,7 +390,7 @@ function renderFriends(){
 
     div.querySelector("[data-open]")?.addEventListener("click", () => openQuickProfile(u));
 
-    div.querySelector("[data-del]")?.addEventListener("click", () => {
+    div.querySelector("[data-del]")?.addEventListener("click", async () => {
       const other = u.username;
       if (!confirm(`¿Eliminar a ${other} de tus amigos?`)) return;
 
@@ -473,9 +405,9 @@ function renderFriends(){
 
       saveFriends(friends);
 
-      renderFriends();
+      await renderFriends();
       renderRequests();
-      render();
+      await render();
 
       if (selectedUser && normalize(selectedUser.username) === OT && !profileOverlay.classList.contains("hidden")){
         openQuickProfile(selectedUser);
@@ -488,7 +420,7 @@ function renderFriends(){
 
 /* ===== Enviar solicitud desde modal ===== */
 if (btnAddFriend){
-  btnAddFriend.addEventListener("click", () => {
+  btnAddFriend.addEventListener("click", async () => {
     const me = localStorage.getItem("soyucab_usuario") || "@usuario";
     const other = selectedUser?.username || "";
 
@@ -532,20 +464,20 @@ if (btnAddFriend){
     }
 
     renderRequests();
-    renderFriends();
+    await renderFriends();
   });
 }
 
 /* ===== Listeners ===== */
 if (btnBack) btnBack.addEventListener("click", () => history.back());
-if (q) q.addEventListener("input", () => { render(); });
+if (q) q.addEventListener("input", async () => { await render(); });
 
 chips.forEach(ch => {
-  ch.addEventListener("click", () => {
+  ch.addEventListener("click", async () => {
     chips.forEach(x => x.classList.remove("active"));
     ch.classList.add("active");
     roleFilter = ch.dataset.role || "all";
-    render();
+    await render();
   });
 });
 
@@ -565,6 +497,8 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ===== Start ===== */
-render();
-renderRequests();
-renderFriends();
+(async () => {
+  await render();
+  renderRequests();
+  await renderFriends();
+})();
