@@ -25,23 +25,6 @@
       <section class="card profile-card" aria-label="Mi Perfil">
         <div class="profile-head">
 
-          <div class="avatar-wrap">
-            <div id="avatarCircle" class="avatar-big" aria-label="Foto de perfil">
-              <span id="avatarEmoji" class="avatar-emoji">👤</span>
-              <img id="avatarImg" class="avatar-img" alt="Foto de perfil" />
-            </div>
-
-            <div class="avatar-actions">
-              <label class="file-btn" title="Cambiar foto">
-                📷 Cambiar
-                <input id="avatarInput" type="file" accept="image/*" hidden disabled>
-              </label>
-
-              <button id="btnRemoveAvatar" class="btn" type="button" disabled>Quitar</button>
-              <div id="avatarHint" class="hint">Máximo recomendado: 2MB</div>
-            </div>
-          </div>
-
           <div class="who">
             <h1 id="displayUser" class="title">@usuario</h1>
             <p class="subtitle">
@@ -52,6 +35,7 @@
           <div class="head-actions">
             <button id="btnEdit" class="btn" type="button">Editar</button>
             <button id="btnSave" class="btn primary" type="button" disabled>Guardar</button>
+            <button id="btnDelete" class="btn danger" type="button">Eliminar Perfil</button>
           </div>
         </div>
 

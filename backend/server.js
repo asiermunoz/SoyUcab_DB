@@ -76,6 +76,11 @@ app.post('/api/login', async (req, res) => {
 
     const user = result.rows[0];
 
+    // Verificar si el usuario está activo; si no, activarlo
+    if (!user.activo) {
+      await pool.query('UPDATE Usuario SET activo = true WHERE username = $1', [username]);
+    }
+
     // Verificar contraseña
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
@@ -89,10 +94,27 @@ app.post('/api/login', async (req, res) => {
       }
     }
 
+    // Determinar role
+    let role = 'persona'; // default
+    const personaCheck = await pool.query('SELECT username FROM Persona WHERE username = $1', [username]);
+    if (personaCheck.rows.length > 0) {
+      role = 'persona';
+    } else {
+      const depCheck = await pool.query('SELECT username FROM Dependencia_UCAB WHERE username = $1', [username]);
+      if (depCheck.rows.length > 0) {
+        role = 'dependencia';
+      } else {
+        const orgCheck = await pool.query('SELECT username FROM Organizacion_Asociada WHERE username = $1', [username]);
+        if (orgCheck.rows.length > 0) {
+          role = 'organizacion';
+        }
+      }
+    }
+
     // Generar token JWT
     const token = jwt.sign({ username: user.username, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.json({ message: 'Login exitoso', token, user: { username: user.username, email: user.email } });
+    res.json({ message: 'Login exitoso', token, user: { username: user.username, email: user.email, role } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error en el servidor' });
@@ -105,12 +127,6 @@ app.post('/api/register/persona', async (req, res) => {
     if (!usuario || !contrasena || !correo || !nombre || !apellido || !cedula || !ciudad || !pais) {
         return res.status(400).json({ error: 'Campos obligatorios faltan'});
     }
-    /* console.log(nombre);
-    console.log(apellido);
-    console.log(correo);
-    console.log(sexo);
-    console.log(ciudad);
-    console.log(pais); */
 
     try{
         const existingUser = await pool.query('SELECT username FROM Usuario WHERE username = $1 OR email = $2', [usuario, correo]);
@@ -123,13 +139,18 @@ app.post('/api/register/persona', async (req, res) => {
         return res.status(400).json({ error: 'Lugar no reconocido. Ciudad y país deben existir en la base de datos.' });
         }
         let id_lugar = lugarResult.rows[0].id_lugar;
-        console.log('id_lugar obtenido:', id_lugar);
+
+        // Mapear sexo
+        let dbSexo = sexo;
+        if (sexo === 'f') dbSexo = 'F';
+        else if (sexo === 'm') dbSexo = 'M';
+        else dbSexo = 'O';
 
         // Hash de la contraseña
         const hashedPassword = await bcrypt.hash(contrasena, 10);
 
         await pool.query('INSERT INTO Usuario (username, email, password) VALUES ($1, $2, $3)', [usuario, correo, hashedPassword]);
-        await pool.query('INSERT INTO Persona (cedula, nombre, apellido, fecha_nacimiento, sexo, biografia, username, id_lugar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [cedula, nombre, apellido, fecha, sexo, bio, usuario, id_lugar]);
+        await pool.query('INSERT INTO Persona (cedula, nombre, apellido, fecha_nacimiento, sexo, biografia, username, id_lugar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [cedula, nombre, apellido, fecha, dbSexo, bio, usuario, id_lugar]);
         res.status(201).json({ message: 'Registro exitoso' });
 
     } catch(err){
@@ -271,4 +292,177 @@ app.get('/api/usuarios', async (req, res) => {
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}`);
   console.log(`Servidor corriendo en http://localhost:${port}/login`);
+});
+
+// ================= PERFIL =================
+
+// GET perfil del usuario autenticado
+app.get('/api/profile', verifyToken, async (req, res) => {
+  const { username } = req.user;
+
+  try {
+    // Obtener datos de Usuario
+    const userResult = await pool.query('SELECT username, email FROM Usuario WHERE username = $1 AND activo = true', [username]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    const user = userResult.rows[0];
+
+    // Verificar si es Persona
+    const personaResult = await pool.query(`
+      SELECT p.cedula, p.nombre, p.apellido, p.fecha_nacimiento, p.sexo, p.biografia, l.ciudad, l.pais
+      FROM Persona p
+      JOIN Lugar l ON p.id_lugar = l.id_lugar
+      WHERE p.username = $1
+    `, [username]);
+
+    if (personaResult.rows.length > 0) {
+      const persona = personaResult.rows[0];
+      return res.json({
+        role: 'persona',
+        general: {
+          usuario: user.username,
+          correo: user.email,
+          ciudad: persona.ciudad,
+          pais: persona.pais,
+          bio: persona.biografia
+        },
+        persona: {
+          nombre: persona.nombre,
+          apellido: persona.apellido,
+          cedula: persona.cedula,
+          fechaNacimiento: persona.fecha_nacimiento ? persona.fecha_nacimiento.toISOString().split('T')[0] : '',
+          sexo: persona.sexo === 'F' ? 'f' : persona.sexo === 'M' ? 'm' : ''
+        }
+      });
+    }
+
+    // Verificar si es Dependencia
+    const depResult = await pool.query('SELECT abreviatura, nombre, tipo FROM Dependencia_UCAB WHERE username = $1', [username]);
+    if (depResult.rows.length > 0) {
+      const dep = depResult.rows[0];
+      return res.json({
+        role: 'dependencia',
+        general: {
+          usuario: user.username,
+          correo: user.email
+        },
+        dependencia: {
+          nombre: dep.nombre,
+          abreviatura: dep.abreviatura,
+          tipo: dep.tipo
+        }
+      });
+    }
+
+    // Verificar si es Organizacion
+    const orgResult = await pool.query(`
+      SELECT o.RIF, o.nombre_organizacion, o.descripcion, o.sector, o.miembros, l.ciudad, l.pais
+      FROM Organizacion_Asociada o
+      JOIN Lugar l ON o.id_lugar = l.id_lugar
+      WHERE o.username = $1
+    `, [username]);
+    if (orgResult.rows.length > 0) {
+      const org = orgResult.rows[0];
+      return res.json({
+        role: 'organizacion',
+        general: {
+          usuario: user.username,
+          correo: user.email,
+          ciudad: org.ciudad,
+          pais: org.pais
+        },
+        organizacion: {
+          nombre: org.nombre_organizacion,
+          rif: org.rif,
+          sector: org.sector,
+          descripcion: org.descripcion,
+          miembros: org.miembros
+        }
+      });
+    }
+
+    res.status(404).json({ error: 'Perfil no encontrado' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener perfil' });
+  }
+});
+
+// PUT actualizar perfil
+app.put('/api/profile', verifyToken, async (req, res) => {
+  const { username } = req.user;
+  const { general, persona, dependencia, organizacion } = req.body;
+
+  try {
+    // Actualizar Usuario
+    if (general.correo) {
+      await pool.query('UPDATE Usuario SET email = $1 WHERE username = $2', [general.correo, username]);
+    }
+    if (general.password) {
+      const hashedPassword = await bcrypt.hash(general.password, 10);
+      await pool.query('UPDATE Usuario SET password = $1 WHERE username = $2', [hashedPassword, username]);
+    }
+
+    // Actualizar según rol
+    if (persona) {
+      // Mapear sexo
+      let sexo = persona.sexo;
+      if (sexo === 'f') sexo = 'F';
+      else if (sexo === 'm') sexo = 'M';
+      else sexo = 'O';
+
+      // Actualizar Lugar si ciudad/pais cambiaron
+      let id_lugar = null;
+      if (general.ciudad && general.pais) {
+        let lugarResult = await pool.query('SELECT id_lugar FROM Lugar WHERE ciudad = $1 AND pais = $2', [general.ciudad, general.pais]);
+        if (lugarResult.rows.length === 0) {
+          lugarResult = await pool.query('INSERT INTO Lugar (ciudad, pais) VALUES ($1, $2) RETURNING id_lugar', [general.ciudad, general.pais]);
+        }
+        id_lugar = lugarResult.rows[0].id_lugar;
+      }
+
+      await pool.query(`
+        UPDATE Persona SET
+          nombre = $1, apellido = $2, fecha_nacimiento = NULLIF($3, '')::date, sexo = $4, biografia = $5, id_lugar = $6
+        WHERE username = $7
+      `, [persona.nombre, persona.apellido, persona.fechaNacimiento, sexo, general.bio, id_lugar, username]);
+    } else if (dependencia) {
+      await pool.query('UPDATE Dependencia_UCAB SET nombre = $1, tipo = $2 WHERE username = $3', [dependencia.nombre, dependencia.tipo, username]);
+    } else if (organizacion) {
+      // Actualizar Lugar
+      let id_lugar = null;
+      if (general.ciudad && general.pais) {
+        let lugarResult = await pool.query('SELECT id_lugar FROM Lugar WHERE ciudad = $1 AND pais = $2', [general.ciudad, general.pais]);
+        if (lugarResult.rows.length === 0) {
+          lugarResult = await pool.query('INSERT INTO Lugar (ciudad, pais) VALUES ($1, $2) RETURNING id_lugar', [general.ciudad, general.pais]);
+        }
+        id_lugar = lugarResult.rows[0].id_lugar;
+      }
+
+      await pool.query(`
+        UPDATE Organizacion_Asociada SET
+          nombre_organizacion = $1, descripcion = $2, sector = $3, miembros = $4::int, id_lugar = $5
+        WHERE username = $6
+      `, [organizacion.nombre, organizacion.descripcion, organizacion.sector, organizacion.miembros, id_lugar, username]);
+    }
+
+    res.json({ message: 'Perfil actualizado correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al actualizar perfil' });
+  }
+});
+
+// DELETE eliminar perfil (desactivar)
+app.delete('/api/profile', verifyToken, async (req, res) => {
+  const { username } = req.user;
+
+  try {
+    await pool.query('UPDATE Usuario SET activo = false WHERE username = $1', [username]);
+    res.json({ message: 'Perfil eliminado correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al eliminar perfil' });
+  }
 });
