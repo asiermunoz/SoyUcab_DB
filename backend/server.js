@@ -111,6 +111,11 @@ app.post('/api/login', async (req, res) => {
       }
     }
 
+    // Verificar si es admin
+    if (['adminAsier', 'adminEmiliany', 'adminJose'].includes(username)) {
+      role = 'admin';
+    }
+
     // Generar token JWT
     const token = jwt.sign({ username: user.username, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
@@ -294,7 +299,6 @@ app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}/login`);
 });
 
-// ================= PERFIL =================
 
 // GET perfil del usuario autenticado
 app.get('/api/profile', verifyToken, async (req, res) => {
@@ -464,5 +468,280 @@ app.delete('/api/profile', verifyToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al eliminar perfil' });
+  }
+});
+
+// Middleware para verificar admin
+const verifyAdmin = async (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.status(403).json({ error: 'Token requerido' });
+
+  jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+    if (err) return res.status(401).json({ error: 'Token inválido' });
+
+    // Obtener role del usuario
+    try {
+      const userResult = await pool.query('SELECT username FROM Usuario WHERE username = $1 AND activo = true', [decoded.username]);
+      if (userResult.rows.length === 0) return res.status(403).json({ error: 'Usuario no encontrado' });
+
+      let role = 'persona';
+      const personaCheck = await pool.query('SELECT username FROM Persona WHERE username = $1', [decoded.username]);
+      if (personaCheck.rows.length > 0) {
+        role = 'persona';
+      } else {
+        const depCheck = await pool.query('SELECT username FROM Dependencia_UCAB WHERE username = $1', [decoded.username]);
+        if (depCheck.rows.length > 0) {
+          role = 'dependencia';
+        } else {
+          const orgCheck = await pool.query('SELECT username FROM Organizacion_Asociada WHERE username = $1', [decoded.username]);
+          if (orgCheck.rows.length > 0) {
+            role = 'organizacion';
+          }
+        }
+      }
+      if (['adminAsier', 'adminEmiliany', 'adminJose'].includes(decoded.username)) {
+        role = 'admin';
+      }
+
+      if (role !== 'admin') return res.status(403).json({ error: 'Acceso denegado: solo admin' });
+      req.user = decoded;
+      next();
+    } catch (dbErr) {
+      console.error(dbErr);
+      res.status(500).json({ error: 'Error verificando permisos' });
+    }
+  });
+};
+
+// REPORTES DATA
+app.get('/api/report-data/:id', verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    let data = {};
+    if (id === 'r1_total_usuarios') {
+      const result = await pool.query(`
+        SELECT 
+          'Persona' as tipo_usuario, COUNT(*) as cantidad_registrada 
+        FROM Persona 
+        UNION ALL 
+        SELECT 'Dependencia', COUNT(*) FROM Dependencia_UCAB 
+        UNION ALL 
+        SELECT 'Organizacion', COUNT(*) FROM Organizacion_Asociada
+      `);
+      const rows = result.rows;
+      const total = rows.reduce((sum, r) => sum + parseInt(r.cantidad_registrada), 0);
+      data = { rows, totalUsuarios: total };
+    } else if (id === 'r3_total_grupos') {
+      const result = await pool.query('SELECT tipo as tipo_de_grupo, COUNT(*) as cantidad FROM Grupo GROUP BY tipo');
+      const rows = result.rows;
+      const totalGrupos = rows.reduce((sum, r) => sum + parseInt(r.cantidad), 0);
+      data = { rows, totalGrupos };
+    } else if (id === 'r2_egresados_carrera_anio') {
+      // Usando fecha_fin de Cursa como año de graduación
+      const result = await pool.query(`
+        SELECT c.nombre as carrera, EXTRACT(YEAR FROM cu.fecha_fin) as anio, COUNT(DISTINCT cu.cedula_persona) as cantidad
+        FROM Carrera c
+        LEFT JOIN Cursa cu ON c.codigo_carrera = cu.codigo_carrera
+        WHERE cu.fecha_fin IS NOT NULL
+        GROUP BY c.nombre, EXTRACT(YEAR FROM cu.fecha_fin)
+        ORDER BY c.nombre, anio
+      `);
+      const rows = result.rows;
+      const totalGeneral = rows.reduce((sum, r) => sum + parseInt(r.cantidad), 0);
+      data = { rows, totalGeneral };
+    } else if (id === 'r4_grupos_mayor_miembros') {
+      // Tabla Es_Miembro en lugar de MiembrosGrupo
+      const result = await pool.query(`
+        SELECT g.nombre as nombre_grupo, g.tipo as tipo_grupo, COUNT(em.id_usuario) as miembros_activos
+        FROM Grupo g
+        LEFT JOIN Es_Miembro em ON g.id_grupo = em.id_grupo
+        GROUP BY g.nombre, g.tipo
+        ORDER BY miembros_activos DESC
+        LIMIT 10
+      `);
+      const rows = result.rows;
+      const totalMiembros = rows.reduce((sum, r) => sum + parseInt(r.miembros_activos), 0);
+      data = { rows, totalMiembros };
+    } else if (id === 'r5_eventos_mayor_asistencia') {
+      // Tabla Asiste en lugar de AsistenciaEvento, asistencia por cedula_persona
+      const result = await pool.query(`
+        SELECT e.nombre_evento, u.username as organizador, COUNT(DISTINCT a.cedula_persona) as asistencia_registrada
+        FROM Evento e
+        LEFT JOIN Asiste a ON e.id_evento = a.id_evento
+        LEFT JOIN Usuario u ON e.organizador_responsable = u.username
+        GROUP BY e.nombre_evento, u.username
+        ORDER BY asistencia_registrada DESC
+        LIMIT 10
+      `);
+      const rows = result.rows;
+      const totalAsistencia = rows.reduce((sum, r) => sum + parseInt(r.asistencia_registrada), 0);
+      data = { rows, totalAsistencia };
+    } else if (id === 'r6_eventos_por_mes') {
+      // Campo fecha_evento en lugar de fecha
+      const result = await pool.query(`
+        SELECT EXTRACT(MONTH FROM fecha_evento) as mes, COUNT(*) as eventos_organizados
+        FROM Evento
+        GROUP BY EXTRACT(MONTH FROM fecha_evento)
+        ORDER BY mes
+      `);
+      const rows = result.rows;
+      const totalEventos = rows.reduce((sum, r) => sum + parseInt(r.eventos_organizados), 0);
+      data = { rows, totalEventos };
+    } else if (id === 'r7_usuarios_activos_mes') {
+      // Usuarios registrados por mes
+      const result = await pool.query(`
+        SELECT EXTRACT(MONTH FROM fecha_registro) as mes, COUNT(*) as usuarios_activos
+        FROM Usuario
+        WHERE activo = true
+        GROUP BY EXTRACT(MONTH FROM fecha_registro)
+        ORDER BY mes
+      `);
+      const rows = result.rows;
+      const totalUsuariosActivos = rows.reduce((sum, r) => sum + parseInt(r.usuarios_activos), 0);
+      data = { rows, totalUsuariosActivos };
+    } else if (id === 'r8_ranking_usuarios_publicaciones') {
+      const result = await pool.query(`
+        SELECT u.username as nombre_usuario, 
+               CASE 
+                 WHEN pe.username IS NOT NULL THEN 'Persona'
+                 WHEN d.username IS NOT NULL THEN 'Dependencia'
+                 WHEN o.username IS NOT NULL THEN 'Organizacion'
+                 ELSE 'Admin'
+               END as rol,
+               COUNT(p.id_publicacion) as publicaciones_realizadas
+        FROM Usuario u
+        LEFT JOIN Publicacion p ON u.username = p.autor
+        LEFT JOIN Persona pe ON u.username = pe.username
+        LEFT JOIN Dependencia_UCAB d ON u.username = d.username
+        LEFT JOIN Organizacion_Asociada o ON u.username = o.username
+        GROUP BY u.username, pe.username, d.username, o.username
+        ORDER BY publicaciones_realizadas DESC
+        LIMIT 10
+      `);
+      const rows = result.rows;
+      const totalPublicaciones = rows.reduce((sum, r) => sum + parseInt(r.publicaciones_realizadas), 0);
+      data = { rows, totalPublicaciones };
+    } else if (id === 'r9_publicaciones_mas_comentadas') {
+      // Comentarios en JSONB, contar longitud del array
+      const result = await pool.query(`
+        SELECT p.contenido as titulo_publicacion, u.username as autor, COALESCE(array_length(p.comentarios, 1), 0) as comentarios_recibidos
+        FROM Publicacion p
+        LEFT JOIN Usuario u ON p.autor = u.username
+        ORDER BY comentarios_recibidos DESC
+        LIMIT 10
+      `);
+      const rows = result.rows;
+      const totalComentarios = rows.reduce((sum, r) => sum + parseInt(r.comentarios_recibidos), 0);
+      data = { rows, totalComentarios };
+    } else {
+      data = {};
+    }
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error obteniendo data del reporte' });
+  }
+});
+
+// ADMIN METRICS
+app.get('/api/admin/metrics', verifyAdmin, async (req, res) => {
+  try {
+    const users = await pool.query('SELECT COUNT(*) as count FROM Usuario WHERE activo = true');
+    const groups = await pool.query('SELECT COUNT(*) as count FROM Grupo');
+    const events = await pool.query('SELECT COUNT(*) as count FROM Evento');
+    const posts = await pool.query('SELECT COUNT(*) as count FROM Publicacion');
+    res.json({
+      users: users.rows[0].count,
+      groups: groups.rows[0].count,
+      events: events.rows[0].count,
+      posts: posts.rows[0].count
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error obteniendo métricas' });
+  }
+});
+
+// ADMIN LAST USERS
+app.get('/api/admin/last-users', verifyAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.username, u.email, 
+             CASE 
+               WHEN p.username IS NOT NULL THEN CONCAT(p.nombre, ' ', p.apellido)
+               WHEN d.username IS NOT NULL THEN d.nombre
+               WHEN o.username IS NOT NULL THEN o.nombre_organizacion
+               ELSE u.username
+             END as displayName,
+             CASE 
+               WHEN p.username IS NOT NULL THEN 'persona'
+               WHEN d.username IS NOT NULL THEN 'dependencia'
+               WHEN o.username IS NOT NULL THEN 'organizacion'
+               ELSE 'persona'
+             END as role
+      FROM Usuario u
+      LEFT JOIN Persona p ON u.username = p.username
+      LEFT JOIN Dependencia_UCAB d ON u.username = d.username
+      LEFT JOIN Organizacion_Asociada o ON u.username = o.username
+      WHERE u.activo = true
+      ORDER BY u.username DESC LIMIT 6
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error obteniendo últimos usuarios' });
+  }
+});
+
+// ADMIN LAST GROUPS
+app.get('/api/admin/last-groups', verifyAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT nombre, tipo, estado FROM Grupo ORDER BY nombre DESC LIMIT 6');
+    res.json(result.rows.map(g => ({ nombre: g.nombre, tipo: g.tipo, estado: g.estado })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error obteniendo últimos grupos' });
+  }
+});
+
+// ADMIN USERS LIST
+app.get('/api/admin/users', verifyAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.username, u.email, 
+             CASE 
+               WHEN u.username IN ('adminAsier', 'adminEmiliany', 'adminJose') THEN 'admin'
+               WHEN p.username IS NOT NULL THEN 'persona'
+               WHEN d.username IS NOT NULL THEN 'dependencia'
+               WHEN o.username IS NOT NULL THEN 'organizacion'
+               ELSE 'persona'
+             END as role
+      FROM Usuario u
+      LEFT JOIN Persona p ON u.username = p.username
+      LEFT JOIN Dependencia_UCAB d ON u.username = d.username
+      LEFT JOIN Organizacion_Asociada o ON u.username = o.username
+      WHERE u.activo = true
+      ORDER BY u.username
+    `);
+    res.json(result.rows.map(user => ({
+      usuario: '@' + user.username,
+      correo: user.email,
+      role: user.role
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error obteniendo usuarios' });
+  }
+});
+
+// DELETE USER (desactivar)
+app.delete('/api/admin/users/:username', verifyAdmin, async (req, res) => {
+  const { username } = req.params;
+  try {
+    await pool.query('UPDATE Usuario SET activo = false WHERE username = $1', [username]);
+    res.json({ message: 'Usuario desactivado' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error desactivando usuario' });
   }
 });

@@ -1,0 +1,17 @@
+{
+    "name": "r6_eventos_por_mes",
+    "engine": "handlebars",
+    "recipe": "chrome-pdf",
+    "shortid": "wejqL8CYP",
+    "chrome": {
+        "printBackground": true
+    },
+    "creationDate": {
+        "$$date": 1767770452087
+    },
+    "modificationDate": {
+        "$$date": 1767770452087
+    },
+    "_id": "qpuB80r72znu4eUe",
+    "$entitySet": "templates"
+}

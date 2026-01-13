@@ -82,8 +82,9 @@ formulario.addEventListener("submit", async function (e) {
       localStorage.setItem("soyucab_token", data.token);
       localStorage.setItem("soyucab_usuario", data.user.username);
       localStorage.setItem("soyucab_role", data.user.role);
-      // Redirigir a la página principal
-      setTimeout(() => window.location.href = '../Inicio/inicio.html', 400);
+      // Redirigir según el rol
+      const redirectUrl = data.user.role === 'admin' ? '../Admin/admin.html' : '../Inicio/inicio.html';
+      setTimeout(() => window.location.href = redirectUrl, 400);
     } else {
       mensaje.textContent = data.error || 'Usuario o contraseña incorrectos.';
       mensaje.style.color = 'red';

@@ -22,154 +22,9 @@ function loadJSON(key, fallback){
 })();
 
 /* ==========================
-   LECTURA (ajustada a tu app)
-   - Usuarios: intenta varias llaves
-   - Grupos/Eventos/Posts: intenta llaves comunes
-   ========================== */
-function readUsers(){
-  const keys = ["soyucab_users","soyucab_usuarios","usuarios","users","app_users"];
-  let out = [];
-  keys.forEach(k => {
-    const data = loadJSON(k, null);
-    if (Array.isArray(data)) out = out.concat(data);
-  });
-
-  // si existen perfiles tipo diccionario: { "@user": {general:{...}} }
-  const profKeys = ["soyucab_profiles","profiles","perfil_data"];
-  profKeys.forEach(k => {
-    const data = loadJSON(k, null);
-    if (data && typeof data === "object" && !Array.isArray(data)){
-      Object.keys(data).forEach(u => out.push({ username: u, ...(data[u]||{}) }));
-    }
-  });
-
-  // normalizar a username/displayName si se puede
-  return out.map(u => ({
-    username: u.username || u.user || u.handle || u.usuario || u.email || "",
-    displayName: u.displayName || u.name || u.nombre || u.fullName || u.username || "",
-    role: u.role || u.tipo || u.rol || u.userType || "persona"
-  })).filter(u => u.username);
-}
-
-function readGroups(){
-  const keys = ["soyucab_groups","groups","grupos","app_groups"];
-  for (const k of keys){
-    const data = loadJSON(k, null);
-    if (Array.isArray(data)) return data;
-  }
-  return [];
-}
-
-function readEvents(){
-  const keys = ["soyucab_events","events","eventos","app_events"];
-  for (const k of keys){
-    const data = loadJSON(k, null);
-    if (Array.isArray(data)) return data;
-  }
-  return [];
-}
-
-function readPosts(){
-  const keys = ["soyucab_posts","posts","publicaciones","app_posts"];
-  for (const k of keys){
-    const data = loadJSON(k, null);
-    if (Array.isArray(data)) return data;
-  }
-  return [];
-}
-
-/* ==========================
-   Render métricas + listas
-   ========================== */
-function render(){
-  const users = readUsers();
-  const groups = readGroups();
-  const events = readEvents();
-  const posts = readPosts();
-
-  const mUsers = $("mUsers");
-  const mGroups = $("mGroups");
-  const mEvents = $("mEvents");
-  const mPosts = $("mPosts");
-
-  if (mUsers) mUsers.textContent = users.length;
-  if (mGroups) mGroups.textContent = groups.length;
-  if (mEvents) mEvents.textContent = events.length;
-  if (mPosts) mPosts.textContent = posts.length;
-
-  renderLastUsers(users);
-  renderLastGroups(groups);
-}
-
-function renderLastUsers(users){
-  const box = $("lastUsers");
-  const empty = $("lastUsersEmpty");
-  if (!box || !empty) return;
-
-  box.innerHTML = "";
-
-  const last = users.slice(-6).reverse();
-  if (last.length === 0){
-    empty.classList.remove("hidden");
-    return;
-  }
-  empty.classList.add("hidden");
-
-  last.forEach(u => {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <div>
-        <strong>${u.displayName || u.username}</strong><br/>
-        <small>${u.username}</small>
-      </div>
-      <small>${u.role}</small>
-    `;
-    box.appendChild(div);
-  });
-}
-
-function renderLastGroups(groups){
-  const box = $("lastGroups");
-  const empty = $("lastGroupsEmpty");
-  if (!box || !empty) return;
-
-  box.innerHTML = "";
-
-  const last = groups.slice(-6).reverse();
-  if (last.length === 0){
-    empty.classList.remove("hidden");
-    return;
-  }
-  empty.classList.add("hidden");
-
-  last.forEach(g => {
-    const name = g.nombre || g.name || "Grupo";
-    const type = g.tipo || g.type || "—";
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <div>
-        <strong>${name}</strong><br/>
-        <small>${type}</small>
-      </div>
-      <small>${g.estado || g.status || ""}</small>
-    `;
-    box.appendChild(div);
-  });
-}
-
-/* ==========================
    Acciones
    ========================== */
-const btnGoInicio = $("btnGoInicio");
 const btnLogout = $("btnLogout");
-
-if (btnGoInicio){
-  btnGoInicio.addEventListener("click", () => {
-    window.location.href = "../Inicio/inicio.html";
-  });
-}
 
 if (btnLogout){
   btnLogout.addEventListener("click", () => {
@@ -178,34 +33,6 @@ if (btnLogout){
     localStorage.removeItem("soyucab_role");
     localStorage.removeItem("soyucab_sesion");
     window.location.href = "../login/index.html";
-  });
-}
-
-const goUsuarios = document.getElementById("goUsuarios");
-if (goUsuarios) {
-  goUsuarios.addEventListener("click", () => {
-    window.location.href = "GestionUsuario/gestionUsuario.html";
-  });
-}
-
-const goGrupos = document.getElementById("goGrupos");
-if (goGrupos) {
-  goGrupos.addEventListener("click", () => {
-    window.location.href = "GestionGrupo/gestionGrupo.html";
-  });
-}
-
-const goEventos = document.getElementById("goEventos");
-if (goEventos) {
-  goEventos.addEventListener("click", () => {
-    window.location.href = "GestionEvento/gestionEvento.html";
-  });
-}
-
-const goPosts = document.getElementById("goPosts");
-if (goPosts) {
-  goPosts.addEventListener("click", () => {
-    window.location.href = "GestionPublicaciones/gestionPublicacion.html";
   });
 }
 
@@ -274,16 +101,25 @@ if (goPosts) {
     const JSREPORT_URL = "http://127.0.0.1:5488/api/report";
 
     try{
+      // Obtener data del backend
+      const token = localStorage.getItem("soyucab_token");
+      const dataRes = await fetch(`http://localhost:3000/api/report-data/${reportId}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (!dataRes.ok) throw new Error("No se pudo obtener data del reporte");
+      const reportData = await dataRes.json();
+
       const payload = {
-        template: { name: reportId }
-        // data: {}  // 👈 luego metemos data real
+        template: { name: reportId },
+        data: reportData
       };
 
       const res = await fetch(JSREPORT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify(payload),
-        mode: "cors",
         cache: "no-store",
         keepalive: true
       });
@@ -334,5 +170,3 @@ if (goPosts) {
     return `${safe}_${yyyy}-${mm}-${dd}.pdf`;
   }
 })();
-
-render();

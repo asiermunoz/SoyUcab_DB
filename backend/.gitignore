@@ -52,4 +52,4 @@ postgres-data/
 *.pid.lock
 
 # Archivos SQL 
-/Entrega3-SQL
+# /Entrega3-SQL

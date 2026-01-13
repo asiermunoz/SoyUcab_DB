@@ -1,0 +1,17 @@
+{
+    "name": "r2_egresados_carrera_anio",
+    "engine": "handlebars",
+    "recipe": "chrome-pdf",
+    "shortid": "ho_sTU5T2",
+    "chrome": {
+        "printBackground": true
+    },
+    "creationDate": {
+        "$$date": 1767765466169
+    },
+    "modificationDate": {
+        "$$date": 1767765466169
+    },
+    "_id": "nGyOfQeQSJhrAIi7",
+    "$entitySet": "templates"
+}

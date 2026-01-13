@@ -1,0 +1,17 @@
+{
+    "name": "r3_total_grupos",
+    "engine": "handlebars",
+    "recipe": "chrome-pdf",
+    "shortid": "dX0x32Jye",
+    "chrome": {
+        "printBackground": true
+    },
+    "creationDate": {
+        "$$date": 1767770452083
+    },
+    "modificationDate": {
+        "$$date": 1767770452083
+    },
+    "_id": "yqJEavB3w3ea4mC8",
+    "$entitySet": "templates"
+}

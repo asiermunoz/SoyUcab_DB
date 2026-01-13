@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>{{titulo}}</title>
+
+  <style>
+    :root{
+      --primary:#0f3b66;
+      --border:#d7d7d7;
+      --text:#111;
+      --muted:#555;
+      --soft:#f5f7fb;
+      --totalbg:#eef3fb;
+      --totalborder:#cfe0fb;
+    }
+
+    body{
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 28px 34px;
+      color: var(--text);
+      background: #fff;
+    }
+
+    /* ===== Encabezado institucional ===== */
+    .header{
+      margin-bottom: 14px;
+    }
+    .org{
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    h1{
+      font-size: 20px;
+      margin: 0;
+      color: var(--primary);
+      line-height: 1.2;
+      text-align: left;
+    }
+
+    /* ===== Descripción ===== */
+    .desc{
+      font-size: 12.5px;
+      line-height: 1.55;
+      margin: 10px 0 16px 0;
+      max-width: 900px;
+      text-align: justify;
+      color: #222;
+    }
+
+    /* ===== Contenedor estilo tarjeta ===== */
+    .card{
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,.06);
+    }
+
+    /* ===== Tabla ===== */
+    table{
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    thead th{
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 12px;
+      text-align: center;
+      font-weight: 700;
+      border-right: 1px solid rgba(255,255,255,.15);
+    }
+    thead th:last-child{ border-right: none; }
+
+    tbody td{
+      padding: 9px 12px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      background: #fff;
+    }
+    tbody td:first-child{
+      text-align: left;
+      width: 55%;
+    }
+    tbody tr:nth-child(even) td{
+      background: var(--soft);
+    }
+
+    /* ===== Fila Total General dentro de tabla ===== */
+    tbody tr.total-row td{
+      font-weight: 700;
+      background: var(--totalbg) !important;
+      border-top: 2px solid var(--primary);
+    }
+
+    /* ===== Cuadro Total General (resumen) ===== */
+    .total-box{
+      margin: 18px auto 0 auto;
+      max-width: 460px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: var(--totalbg);
+      border: 1px solid var(--totalborder);
+      box-shadow: 0 1px 2px rgba(0,0,0,.06);
+    }
+    .total-label{
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .total-value{
+      font-size: 20px;
+      font-weight: 800;
+      color: #0b2b4b;
+    }
+
+    /* ===== Pie ===== */
+    .footer{
+      margin-top: 14px;
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Encabezado -->
+  <div class="header">
+    <div class="org">Universidad Católica Andrés Bello (UCAB) – Plataforma SoyUCAB</div>
+    <h1>{{titulo}}</h1>
+  </div>
+
+  <!-- Descripción -->
+  <p class="desc">{{descripcion}}</p>
+
+  <!-- Contenedor -->
+  <div class="card">
+
+    <!-- Tabla -->
+    <table>
+      <thead>
+        <tr>
+          <th>Carrera</th>
+          <th>Año</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {{#each rows}}
+          <tr>
+            <td>{{carrera}}</td>
+            <td>{{anio}}</td>
+            <td>{{total}}</td>
+          </tr>
+        {{/each}}
+
+        <tr class="total-row">
+          <td colspan="2">TOTAL GENERAL</td>
+          <td>{{totalGeneral}}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Cuadro Total -->
+    <div class="total-box">
+      <div class="total-label">Total de Egresados (UCAB)</div>
+      <div class="total-value">{{totalGeneral}}</div>
+    </div>
+
+  </div>
+
+  <!-- Pie -->
+  <div class="footer">
+    Reporte generado por el sistema SoyUCAB
+  </div>
+
+</body>
+</html>
