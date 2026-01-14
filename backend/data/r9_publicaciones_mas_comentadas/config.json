@@ -1,0 +1,17 @@
+{
+    "name": "r9_publicaciones_mas_comentadas",
+    "engine": "handlebars",
+    "recipe": "chrome-pdf",
+    "shortid": "roZQbb8lR",
+    "chrome": {
+        "printBackground": true
+    },
+    "creationDate": {
+        "$$date": 1767770452107
+    },
+    "modificationDate": {
+        "$$date": 1767770452107
+    },
+    "_id": "8Qtejh26ergyPUgJ",
+    "$entitySet": "templates"
+}

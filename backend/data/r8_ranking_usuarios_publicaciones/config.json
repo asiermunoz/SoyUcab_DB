@@ -1,0 +1,17 @@
+{
+    "name": "r8_ranking_usuarios_publicaciones",
+    "engine": "handlebars",
+    "recipe": "chrome-pdf",
+    "shortid": "E9nGtJQF-",
+    "chrome": {
+        "printBackground": true
+    },
+    "creationDate": {
+        "$$date": 1767770452098
+    },
+    "modificationDate": {
+        "$$date": 1767770452098
+    },
+    "_id": "HVm3WAY32b7JYjnW",
+    "$entitySet": "templates"
+}

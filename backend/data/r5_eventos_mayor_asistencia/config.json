@@ -1,0 +1,17 @@
+{
+    "name": "r5_eventos_mayor_asistencia",
+    "engine": "handlebars",
+    "recipe": "chrome-pdf",
+    "shortid": "7KNWPZjYBv",
+    "chrome": {
+        "printBackground": true
+    },
+    "creationDate": {
+        "$$date": 1767770452085
+    },
+    "modificationDate": {
+        "$$date": 1767770452085
+    },
+    "_id": "5t5UuhFUWdzLRKwP",
+    "$entitySet": "templates"
+}

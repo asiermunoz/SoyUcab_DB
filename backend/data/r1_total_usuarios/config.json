@@ -1,0 +1,17 @@
+{
+    "name": "r1_total_usuarios",
+    "engine": "handlebars",
+    "recipe": "chrome-pdf",
+    "shortid": "ngtvN69La",
+    "chrome": {
+        "printBackground": true
+    },
+    "creationDate": {
+        "$$date": 1767765208816
+    },
+    "modificationDate": {
+        "$$date": 1767770452081
+    },
+    "_id": "wipo4s3TWTxwMPL4",
+    "$entitySet": "templates"
+}

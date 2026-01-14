@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mi Perfil | SoyUCAB</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="/img/mini_logo.png">
+</head>
+
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <img src="/img/logo.png" alt="SoyUCAB" class="logo" />
+      </div>
+
+      <nav class="top-actions">
+        <a class="link" href="../Inicio/inicio.html">← Volver al Inicio</a>
+        <button id="btnLogout" class="btn danger" type="button">Cerrar sesión</button>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="card profile-card" aria-label="Mi Perfil">
+        <div class="profile-head">
+
+          <div class="who">
+            <h1 id="displayUser" class="title">@usuario</h1>
+            <p class="subtitle">
+              <strong id="displayRole">Persona</strong>
+            </p>
+          </div>
+
+          <div class="head-actions">
+            <button id="btnEdit" class="btn" type="button">Editar</button>
+            <button id="btnSave" class="btn primary" type="button" disabled>Guardar</button>
+            <button id="btnDelete" class="btn danger" type="button">Eliminar Perfil</button>
+          </div>
+        </div>
+
+        <hr class="sep" />
+
+        <form id="perfilForm" class="form" novalidate>
+          <h2 class="section-title">Datos generales</h2>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="usuario">Usuario</label>
+              <input id="usuario" name="usuario" type="text" placeholder="@demo" disabled />
+            </div>
+
+            <div class="field">
+              <label for="correo">Correo</label>
+              <input id="correo" name="correo" type="email" placeholder="correo@ejemplo.com" disabled />
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="contrasenaPerfil">Contraseña</label>
+              <input id="contrasenaPerfil" name="contrasenaPerfil" type="password" placeholder="********" disabled />
+            </div>
+
+            <div class="field">
+              <label class="inline-check" style="margin-top: 28px;">
+                <input id="verContrasenaPerfil" type="checkbox">
+                Ver contraseña
+              </label>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="pais">País</label>
+              <input id="pais" name="pais" type="text" placeholder="Venezuela" disabled />
+            </div>
+
+            <div class="field">
+              <label for="ciudad">Ciudad</label>
+              <input id="ciudad" name="ciudad" type="text" placeholder="Caracas" disabled />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="bio">Biografía</label>
+            <textarea id="bio" name="bio" rows="4" placeholder="Cuéntanos sobre ti..." disabled></textarea>
+          </div>
+
+          <hr class="sep" />
+
+          <h2 class="section-title" id="roleTitle">Datos por rol</h2>
+          <div id="roleFields" class="role-fields"></div>
+
+          <p id="msg" class="msg" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+    "name": "r4_grupos_mayor_miembros",
+    "engine": "handlebars",
+    "recipe": "chrome-pdf",
+    "shortid": "LkPflO9Ey",
+    "chrome": {
+        "printBackground": true
+    },
+    "creationDate": {
+        "$$date": 1767770452084
+    },
+    "modificationDate": {
+        "$$date": 1767770452084
+    },
+    "_id": "7SnYwdiUiUevH2xT",
+    "$entitySet": "templates"
+}

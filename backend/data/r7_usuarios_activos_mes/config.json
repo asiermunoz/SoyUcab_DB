@@ -1,0 +1,17 @@
+{
+    "name": "r7_usuarios_activos_mes",
+    "engine": "handlebars",
+    "recipe": "chrome-pdf",
+    "shortid": "DEfULudeG",
+    "chrome": {
+        "printBackground": true
+    },
+    "creationDate": {
+        "$$date": 1767770452088
+    },
+    "modificationDate": {
+        "$$date": 1767770452088
+    },
+    "_id": "KxpRRmEfc7LHbWjz",
+    "$entitySet": "templates"
+}

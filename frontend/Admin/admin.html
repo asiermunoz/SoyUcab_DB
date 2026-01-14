@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SoyUCAB | Administrador</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="/img/mini_logo.png">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">
+        <img src="/img/logo.png" alt="Logo del sistema">
+      </div>  
+
+      <div>
+        <h1>Generador de Reportes</h1>
+        <p>Descarga reportes en PDF del sistema</p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="btnLogout" class="btn danger" type="button">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <div class="panelHead">
+        <h2>Reportes Disponibles</h2>
+
+        <div class="reportsSection">
+          <div class="reportsHeader">
+            <div>
+              <h3>Reportes del sistema</h3>
+              <p class="muted">Descarga reportes en PDF.</p>
+            </div>
+          </div>
+
+          <div class="reportsGrid" id="reportsGrid"></div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
